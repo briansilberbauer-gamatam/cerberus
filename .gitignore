@@ -1,0 +1,6 @@
+build/
+dist/
+deps/
+external/JUCE/
+*.log
+.DS_Store
