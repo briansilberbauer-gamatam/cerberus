@@ -1,6 +1,10 @@
 build/
+build-windows/
 dist/
 deps/
 external/JUCE/
 *.log
+stage/
+Cerberus-Windows-*.zip
+Cerberus-Windows-*.sha256
 .DS_Store

@@ -95,6 +95,54 @@ Artifacts:
 - `build/Cerberus_artefacts/Release/VST3/Cerberus.vst3`
 - `build/Cerberus_artefacts/Release/Standalone/Cerberus`
 
+### Windows distribution
+
+A native MSVC build is recommended; cross-compiling JUCE VST3s from Linux is
+not supported here. Install **Visual Studio 2022** with the *Desktop development
+with C++* workload and CMake, then run from PowerShell:
+
+```powershell
+.\scripts\build-windows.ps1
+```
+
+The script builds x64 VST3 and standalone binaries, runs the DSP and VST3 host
+tests, and writes:
+
+```text
+dist\Cerberus-Windows-x64-v1.0.0.zip
+dist\SHA256SUMS-Windows.txt
+```
+
+If script execution is blocked by policy:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build-windows.ps1
+```
+
+The Windows build uses the static MSVC runtime so the receiver does not need a
+separate Visual C++ redistributable. The binary is unsigned; Windows may show a
+SmartScreen warning for the standalone application.
+
+A GitHub Actions workflow is included at
+`.github/workflows/build-windows.yml`. Push to `main` or run **Build Windows**
+manually from the Actions tab, then download the **Cerberus-Windows-x64**
+artifact. The workflow builds with `windows-latest`, runs both test suites, and
+packages the VST3, standalone, README, and font license.
+
+Manual Windows build:
+
+```powershell
+cmake -S . -B build-windows -G "Visual Studio 17 2022" -A x64 `
+  -DCMAKE_BUILD_TYPE=Release `
+  -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded `
+  -DCERBERUS_BUILD_SCREENSHOT=OFF
+cmake --build build-windows --config Release --parallel
+```
+
+The resulting bundle is at
+`build-windows\Cerberus_artefacts\Release\VST3\Cerberus.vst3`. On Windows,
+copy it to `C:\Program Files\Common Files\VST3`.
+
 On macOS these are under `.../VST3/Cerberus.vst3` and `.../Standalone/Cerberus.app`;
 on Windows, use the `Release` directory of the multi-config build and the
 `.vst3` bundle generated there.
