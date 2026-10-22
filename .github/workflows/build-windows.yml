@@ -24,6 +24,7 @@ jobs:
       - name: Check out source
         uses: actions/checkout@v4
 
+      # Set up MSVC environment variables so CMake detects Visual Studio
       - name: Set up MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
 
