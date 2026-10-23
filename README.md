@@ -124,11 +124,11 @@ separate Visual C++ redistributable. The binary is unsigned; Windows may show a
 SmartScreen warning for the standalone application.
 
 A GitHub Actions workflow is included at
-`.github/workflows/build-windows.yml`. Push to `main` or run **Build Windows**
-manually from the Actions tab, then download the **Cerberus-Windows-x64**
-artifact. The workflow builds on the `windows-2022` runner with the VS 2022
-toolchain, runs both test suites, and packages the VST3, standalone, README, and
-font license.
+`.github/workflows/build.yml`. Push to `main` or run **Build Plugins** manually
+from the Actions tab, then download the **Cerberus-Windows-x64** or
+**Cerberus-Linux-x64** artifact. The workflow builds Windows on `windows-2022`
+with the VS 2022 toolchain and Linux on `ubuntu-latest`; both jobs run the test
+suites and package the VST3, standalone, README, and font license.
 
 To publish the package as a GitHub Release, push a version tag:
 
@@ -137,11 +137,41 @@ git tag v1.0.0
 git push origin v1.0.0
 ```
 
-After the Windows build and tests pass, the **Publish Windows release** job
-creates or updates the `v1.0.0` release and attaches the Windows zip and its
-SHA-256 checksum. You can also run **Build Windows** manually and enter a release
-tag in the `release_tag` field; leave it empty to build without publishing a
-release.
+After both platform builds and their tests pass, the **Publish release** job
+creates or updates the `v1.0.0` release and attaches both platform zips and their
+SHA-256 checksums. You can also run **Build Plugins** manually and enter a
+release tag in the `release_tag` field; leave it empty to build without
+publishing a release.
+
+### Linux CI distribution
+
+The `linux-x64` job runs on `ubuntu-latest`, installs the ALSA/X11/Freetype
+development headers, configures with Ninja, runs the DSP and VST3 host tests,
+and uploads the **Cerberus-Linux-x64** artifact containing:
+
+```text
+Cerberus-Linux-x64-v1.0.0.zip
+Cerberus-Linux-x64-v1.0.0.sha256
+```
+
+The zip contains the VST3 bundle, the standalone executable, README, and font
+license. Install it with:
+
+```bash
+unzip Cerberus-Linux-x64-v1.0.0.zip -d /tmp/cerberus-linux
+mkdir -p ~/.vst3
+cp -a /tmp/cerberus-linux/Cerberus.vst3 ~/.vst3/
+```
+
+For a tag build, the same file is attached to the GitHub Release together with
+the Windows package.
+
+Manual Linux build (the repository build script handles this automatically):
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+```
 
 Manual Windows build:
 

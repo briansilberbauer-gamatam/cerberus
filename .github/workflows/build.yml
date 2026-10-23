@@ -1,4 +1,4 @@
-name: Build Windows
+name: Build Plugins
 
 on:
   workflow_dispatch:
@@ -16,13 +16,14 @@ on:
       - "Tests/**"
       - "Tools/**"
       - "CMakeLists.txt"
-      - ".github/workflows/build-windows.yml"
+      - ".github/workflows/build.yml"
 
 permissions:
   contents: read
 
 jobs:
   windows-x64:
+    name: Windows x64
     # windows-latest currently maps to the VS 2026 image, which does not
     # include the Visual Studio 17 2022 generator. JUCE 8.0.8 supports the
     # Visual Studio 2022 toolchain.
@@ -92,20 +93,111 @@ jobs:
             Cerberus-Windows-x64-v*.sha256
           if-no-files-found: error
 
-  publish-windows:
-    name: Publish Windows release
-    needs: windows-x64
+  linux-x64:
+    name: Linux x64
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build pkg-config zip \
+            libasound2-dev \
+            libx11-dev libxext-dev libxinerama-dev libxrandr-dev libxcursor-dev \
+            libxcomposite-dev libxrender-dev libxfixes-dev libxi-dev libsm-dev libice-dev \
+            libx11-xcb-dev libxcb1-dev \
+            libexpat1-dev zlib1g-dev libpng-dev libbrotli-dev libbz2-dev
+
+          if apt-cache show libfreetype-dev >/dev/null 2>&1; then
+            FREETYPE_PACKAGE=libfreetype-dev
+          else
+            FREETYPE_PACKAGE=libfreetype6-dev
+          fi
+
+          if apt-cache show libfontconfig-dev >/dev/null 2>&1; then
+            FONTCONFIG_PACKAGE=libfontconfig-dev
+          else
+            FONTCONFIG_PACKAGE=libfontconfig1-dev
+          fi
+
+          sudo apt-get install -y --no-install-recommends "$FREETYPE_PACKAGE" "$FONTCONFIG_PACKAGE"
+
+      - name: Configure
+        run: |
+          cmake -S . -B build-linux -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCERBERUS_BUILD_SCREENSHOT=OFF \
+            -DCERBERUS_BUILD_HOST_TEST=ON
+
+      - name: Build
+        run: cmake --build build-linux --parallel
+
+      - name: Run DSP tests
+        run: ./build-linux/CerberusTests_artefacts/Release/CerberusTests
+
+      - name: Run VST3 host test
+        run: |
+          ./build-linux/CerberusHostSmokeTest_artefacts/Release/CerberusHostSmokeTest \
+            build-linux/Cerberus_artefacts/Release/VST3/Cerberus.vst3
+
+      - name: Package Linux distribution
+        run: |
+          set -euo pipefail
+
+          VERSION="$(sed -nE 's/^project\(Cerberus VERSION ([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' CMakeLists.txt)"
+          if [ -z "$VERSION" ]; then
+            echo "Could not read the project version from CMakeLists.txt" >&2
+            exit 1
+          fi
+
+          STAGE="stage-linux"
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE"
+
+          cp -a build-linux/Cerberus_artefacts/Release/VST3/Cerberus.vst3 "$STAGE/"
+          cp build-linux/Cerberus_artefacts/Release/Standalone/Cerberus "$STAGE/"
+          cp README.md Resources/Lato-OFL.txt "$STAGE/"
+
+          strip --strip-unneeded \
+            "$STAGE/Cerberus.vst3/Contents/x86_64-linux/Cerberus.so" \
+            "$STAGE/Cerberus"
+
+          ZIP="Cerberus-Linux-x64-v${VERSION}.zip"
+          (cd "$STAGE" && zip -q -r "../${ZIP}" .)
+          sha256sum "$ZIP" > "Cerberus-Linux-x64-v${VERSION}.sha256"
+
+          ls -lh "$ZIP"
+          cat "Cerberus-Linux-x64-v${VERSION}.sha256"
+
+      - name: Upload Linux distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: Cerberus-Linux-x64
+          path: |
+            Cerberus-Linux-x64-v*.zip
+            Cerberus-Linux-x64-v*.sha256
+          if-no-files-found: error
+
+  publish-release:
+    name: Publish release
+    needs: [ windows-x64, linux-x64 ]
     if: ${{ github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Download Windows package
+      - name: Download release packages
         uses: actions/download-artifact@v4
         with:
-          name: Cerberus-Windows-x64
+          pattern: Cerberus-*
           path: release-assets
+          merge-multiple: true
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v3
