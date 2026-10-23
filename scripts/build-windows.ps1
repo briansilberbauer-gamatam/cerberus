@@ -17,7 +17,7 @@ Push-Location $root
 try {
     Write-Host "Configuring Cerberus for Windows $Architecture..."
     cmake -S . -B $buildDir `
-        -G "Visual Studio 17 2022" -A $Architecture `
+        -A $Architecture `
         -DCMAKE_BUILD_TYPE=Release `
         -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded `
         -DCERBERUS_BUILD_SCREENSHOT=OFF `
