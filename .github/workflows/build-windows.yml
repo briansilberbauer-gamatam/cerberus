@@ -2,8 +2,14 @@ name: Build Windows
 
 on:
   workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Optional release tag (e.g. v1.0.0). Leave empty to only upload the Actions artifact."
+        required: false
+        type: string
   push:
     branches: [ main ]
+    tags: [ "v*" ]
     paths:
       - "Source/**"
       - "Resources/**"
@@ -67,11 +73,14 @@ jobs:
           Copy-Item -Force "build-windows\Cerberus_artefacts\Release\Standalone\Cerberus.exe" $stage
           Copy-Item -Force "README.md", "Resources\Lato-OFL.txt" $stage
 
-          $zip = "Cerberus-Windows-x64-v1.0.0.zip"
+          $version = (Select-String -Path "CMakeLists.txt" -Pattern 'project\(Cerberus VERSION ([0-9]+\.[0-9]+\.[0-9]+)\)').Matches[0].Groups[1].Value
+          if (-not $version) { throw "Could not read the project version from CMakeLists.txt" }
+
+          $zip = "Cerberus-Windows-x64-v$version.zip"
           Compress-Archive -Path "$stage\*" -DestinationPath $zip -Force
 
           $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
-          "$hash  $zip" | Out-File -Encoding ascii "Cerberus-Windows-x64-v1.0.0.sha256"
+          "$hash  $zip" | Out-File -Encoding ascii "Cerberus-Windows-x64-v$version.sha256"
           Get-Item $zip | Format-List Name, Length
 
       - name: Upload Windows distribution
@@ -79,6 +88,35 @@ jobs:
         with:
           name: Cerberus-Windows-x64
           path: |
-            Cerberus-Windows-x64-v1.0.0.zip
-            Cerberus-Windows-x64-v1.0.0.sha256
+            Cerberus-Windows-x64-v*.zip
+            Cerberus-Windows-x64-v*.sha256
           if-no-files-found: error
+
+  publish-windows:
+    name: Publish Windows release
+    needs: windows-x64
+    if: ${{ github.ref_type == 'tag' || (github.event_name == 'workflow_dispatch' && inputs.release_tag != '') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download Windows package
+        uses: actions/download-artifact@v4
+        with:
+          name: Cerberus-Windows-x64
+          path: release-assets
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          name: Cerberus ${{ inputs.release_tag || github.ref_name }}
+          files: |
+            release-assets/*.zip
+            release-assets/*.sha256
+          fail_on_unmatched_files: true
+          overwrite_files: true
+          generate_release_notes: true
+          prerelease: ${{ contains(inputs.release_tag || github.ref_name, '-') }}

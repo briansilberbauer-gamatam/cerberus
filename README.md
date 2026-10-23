@@ -127,8 +127,21 @@ A GitHub Actions workflow is included at
 `.github/workflows/build-windows.yml`. Push to `main` or run **Build Windows**
 manually from the Actions tab, then download the **Cerberus-Windows-x64**
 artifact. The workflow builds on the `windows-2022` runner with the VS 2022
-toolchain, runs both test suites, and
-packages the VST3, standalone, README, and font license.
+toolchain, runs both test suites, and packages the VST3, standalone, README, and
+font license.
+
+To publish the package as a GitHub Release, push a version tag:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+After the Windows build and tests pass, the **Publish Windows release** job
+creates or updates the `v1.0.0` release and attaches the Windows zip and its
+SHA-256 checksum. You can also run **Build Windows** manually and enter a release
+tag in the `release_tag` field; leave it empty to build without publishing a
+release.
 
 Manual Windows build:
 

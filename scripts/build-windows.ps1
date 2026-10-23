@@ -10,7 +10,6 @@ $root = Split-Path -Parent $PSScriptRoot
 $buildDir = Join-Path $root "build-windows"
 $distRoot = Join-Path $root "dist"
 $packageDir = Join-Path $distRoot "windows"
-$version = "1.0.0"
 
 Push-Location $root
 
@@ -32,6 +31,11 @@ try {
 
     if ($LASTEXITCODE -ne 0) {
         throw "Build failed."
+    }
+
+    $version = (Select-String -Path (Join-Path $root "CMakeLists.txt") -Pattern 'project\(Cerberus VERSION ([0-9]+\.[0-9]+\.[0-9]+)\)').Matches[0].Groups[1].Value
+    if (-not $version) {
+        throw "Could not read the project version from CMakeLists.txt"
     }
 
     $testExe = Join-Path $buildDir "CerberusTests_artefacts\Release\CerberusTests.exe"
