@@ -147,7 +147,6 @@ Manual Windows build:
 
 ```powershell
 cmake -S . -B build-windows -A x64 `
-  -DCMAKE_BUILD_TYPE=Release `
   -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded `
   -DCERBERUS_BUILD_SCREENSHOT=OFF
 cmake --build build-windows --config Release --parallel

@@ -253,7 +253,7 @@ public:
                 g.setColour (textDim);
                 g.setFont (font (10.0f, FontWeight::regular));
                 g.drawText (juce::String::fromUTF8 ("\xe2\x80\xba"),
-                            chip.getRight(), 627.0f, 16.0f, 24.0f,
+                            juce::Rectangle<float> (chip.getRight(), 627.0f, 16.0f, 24.0f),
                             juce::Justification::centred, false);
             }
 

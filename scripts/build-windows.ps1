@@ -17,7 +17,6 @@ try {
     Write-Host "Configuring Cerberus for Windows $Architecture..."
     cmake -S . -B $buildDir `
         -A $Architecture `
-        -DCMAKE_BUILD_TYPE=Release `
         -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded `
         -DCERBERUS_BUILD_SCREENSHOT=OFF `
         -DCERBERUS_BUILD_HOST_TEST=ON
@@ -33,10 +32,11 @@ try {
         throw "Build failed."
     }
 
-    $version = (Select-String -Path (Join-Path $root "CMakeLists.txt") -Pattern 'project\(Cerberus VERSION ([0-9]+\.[0-9]+\.[0-9]+)\)').Matches[0].Groups[1].Value
-    if (-not $version) {
+    $versionMatch = Select-String -Path (Join-Path $root "CMakeLists.txt") -Pattern 'project\(\s*Cerberus\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)'
+    if (-not $versionMatch -or $versionMatch.Matches.Count -eq 0) {
         throw "Could not read the project version from CMakeLists.txt"
     }
+    $version = $versionMatch.Matches[0].Groups[1].Value
 
     $testExe = Join-Path $buildDir "CerberusTests_artefacts\Release\CerberusTests.exe"
     $hostTest = Join-Path $buildDir "CerberusHostSmokeTest_artefacts\Release\CerberusHostSmokeTest.exe"

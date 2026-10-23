@@ -88,7 +88,7 @@ int main (int argc, char** argv)
         return 1;
     }
 
-    check (instance->getNumParameters() >= 20, "all parameters are exposed to the host");
+    check (instance->getParameters().size() >= 20, "all parameters are exposed to the host");
     check (instance->getNumPrograms() == 8, "factory programs are exposed to the host");
     instance->setPlayConfigDetails (2, 2, 48000.0, 512);
     instance->prepareToPlay (48000.0, 512);
