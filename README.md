@@ -7,6 +7,18 @@ custom interface.
 
 ![Cerberus plugin interface](cerberus-ui.png)
 
+## What's new in 2.1
+
+Cerberus 2.1 adds an official macOS build and makes all three desktop platforms
+first-class release targets:
+
+- **macOS Universal** — one VST3 bundle and standalone `.app` built for Apple
+  Silicon (`arm64`) and Intel (`x86_64`), targeting macOS 11.0 or newer.
+- **Tested on macOS** — CI ad-hoc signs both bundles, then runs the DSP suite
+  and the VST3 host smoke test before packaging.
+- **Three-platform releases** — Windows x64, Linux x64, and macOS Universal must
+  all pass their tests before the GitHub Release is published.
+
 ## What's new in 2.0
 
 Cerberus 2.0 is a major interface and standalone-host release:
@@ -136,7 +148,7 @@ The script builds x64 VST3 and standalone binaries, runs the DSP and VST3 host
 tests, and writes:
 
 ```text
-dist\Cerberus-Windows-x64-v2.0.0.zip
+dist\Cerberus-Windows-x64-v2.1.0.zip
 dist\SHA256SUMS-Windows.txt
 ```
 
@@ -152,21 +164,23 @@ SmartScreen warning for the standalone application.
 
 A GitHub Actions workflow is included at
 `.github/workflows/build.yml`. Push to `main` or run **Build Plugins** manually
-from the Actions tab, then download the **Cerberus-Windows-x64** or
-**Cerberus-Linux-x64** artifact. The workflow builds Windows on `windows-2022`
-with the VS 2022 toolchain and Linux on `ubuntu-latest`; both jobs run the test
-suites and package the VST3, standalone, README, changelog, and font license.
+from the Actions tab, then download the **Cerberus-Windows-x64**,
+**Cerberus-Linux-x64**, or **Cerberus-macOS-Universal** artifact. The workflow
+builds Windows on `windows-2022` with the VS 2022 toolchain, Linux on
+`ubuntu-latest`, and a macOS Universal binary on `macos-14`; all three jobs run
+the test suites and package the VST3, standalone, README, changelog, and font
+license.
 
-To publish the package as a GitHub Release, push a version tag:
+To publish the packages as a GitHub Release, push a version tag:
 
 ```bash
-git tag v2.0.0
-git push origin v2.0.0
+git tag v2.1.0
+git push origin v2.1.0
 ```
 
-After both platform builds and their tests pass, the **Publish release** job
-creates or updates the `v2.0.0` release and attaches both platform zips and their
-SHA-256 checksums. You can also run **Build Plugins** manually and enter a
+After all three platform builds and their tests pass, the **Publish release** job
+creates or updates the `v2.1.0` release and attaches every platform zip and its
+SHA-256 checksum. You can also run **Build Plugins** manually and enter a
 release tag in the `release_tag` field; leave it empty to build without
 publishing a release.
 
@@ -177,21 +191,54 @@ development headers, configures with Ninja, runs the DSP and VST3 host tests,
 and uploads the **Cerberus-Linux-x64** artifact containing:
 
 ```text
-Cerberus-Linux-x64-v2.0.0.zip
-Cerberus-Linux-x64-v2.0.0.sha256
+Cerberus-Linux-x64-v2.1.0.zip
+Cerberus-Linux-x64-v2.1.0.sha256
 ```
 
 The zip contains the VST3 bundle, the standalone executable, README, changelog,
 and font license. Install it with:
 
 ```bash
-unzip Cerberus-Linux-x64-v2.0.0.zip -d /tmp/cerberus-linux
+unzip Cerberus-Linux-x64-v2.1.0.zip -d /tmp/cerberus-linux
 mkdir -p ~/.vst3
 cp -a /tmp/cerberus-linux/Cerberus.vst3 ~/.vst3/
 ```
 
 For a tag build, the same file is attached to the GitHub Release together with
-the Windows package.
+the Windows and macOS packages.
+
+### macOS CI distribution
+
+The `macos-universal` job runs on `macos-14`, configures a Universal Binary with
+`-DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"` and a macOS 11.0 deployment target,
+ad-hoc signs the VST3 and standalone app, then runs the DSP and VST3 host tests
+before uploading the **Cerberus-macOS-Universal** artifact containing:
+
+```text
+Cerberus-macOS-Universal-v2.1.0.zip
+Cerberus-macOS-Universal-v2.1.0.sha256
+```
+
+The zip contains a Universal `Cerberus.vst3` and `Cerberus.app`, plus README,
+changelog, and font license. Install it with:
+
+```bash
+unzip Cerberus-macOS-Universal-v2.1.0.zip -d /tmp/cerberus-macos
+mkdir -p ~/Library/Audio/Plug-Ins/VST3
+cp -R /tmp/cerberus-macos/Cerberus.vst3 ~/Library/Audio/Plug-Ins/VST3/
+cp -R /tmp/cerberus-macos/Cerberus.app /Applications/
+```
+
+The bundles are ad-hoc signed but not notarized. If Gatekeeper blocks the
+standalone app on first launch, right-click **Cerberus.app** and choose **Open**,
+or clear the quarantine flag:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/Cerberus.app
+```
+
+macOS 11.0 or newer is required. The Universal bundle runs natively on Apple
+Silicon and Intel Macs.
 
 Manual Linux build (the repository build script handles this automatically):
 
@@ -209,13 +256,24 @@ cmake -S . -B build-windows -A x64 `
 cmake --build build-windows --config Release --parallel
 ```
 
-The resulting bundle is at
-`build-windows\Cerberus_artefacts\Release\VST3\Cerberus.vst3`. On Windows,
-copy it to `C:\Program Files\Common Files\VST3`.
+The resulting Windows bundle is at
+`build-windows\Cerberus_artefacts\Release\VST3\Cerberus.vst3`. Copy it to
+`C:\Program Files\Common Files\VST3`.
 
-On macOS these are under `.../VST3/Cerberus.vst3` and `.../Standalone/Cerberus.app`;
-on Windows, use the `Release` directory of the multi-config build and the
-`.vst3` bundle generated there.
+Manual macOS Universal build (requires Ninja, e.g. `brew install ninja`):
+
+```bash
+cmake -S . -B build-macos -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" \
+  -DCMAKE_OSX_DEPLOYMENT_TARGET="11.0" \
+  -DCERBERUS_BUILD_SCREENSHOT=OFF
+cmake --build build-macos --parallel
+codesign --force --deep --sign - build-macos/Cerberus_artefacts/Release/VST3/Cerberus.vst3
+codesign --force --deep --sign - build-macos/Cerberus_artefacts/Release/Standalone/Cerberus.app
+```
+
+The resulting bundles are under `build-macos/Cerberus_artefacts/Release/`. Copy
+the VST3 to `~/Library/Audio/Plug-Ins/VST3` and the app to `/Applications`.
 
 ### Install
 

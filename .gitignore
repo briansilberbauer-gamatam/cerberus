@@ -1,10 +1,14 @@
 build/
 build-windows/
+build-macos/
 dist/
 deps/
 external/JUCE/
 *.log
 stage/
+stage-*/
 Cerberus-Windows-*.zip
 Cerberus-Windows-*.sha256
+Cerberus-macOS-*.zip
+Cerberus-macOS-*.sha256
 .DS_Store

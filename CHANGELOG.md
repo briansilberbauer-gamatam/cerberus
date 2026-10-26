@@ -3,6 +3,24 @@
 All notable changes to Cerberus are documented here. Versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [2.1.0] — 2026-10-26
+
+### Added
+
+- **macOS Universal builds** — a single VST3 bundle and standalone `.app` for
+  Apple Silicon (`arm64`) and Intel (`x86_64`), targeting macOS 11.0 or newer.
+- macOS CI job on `macos-14` that builds the Universal binaries, ad-hoc signs
+  both bundles, runs the DSP and VST3 host smoke tests, and packages
+  `Cerberus-macOS-Universal-v2.1.0.zip` with a SHA-256 checksum.
+- macOS install and Gatekeeper guidance in the README.
+
+### Changed
+
+- The release workflow now requires Windows x64, Linux x64, and macOS Universal
+  to pass their test suites before publishing the GitHub Release.
+- macOS packages are created with `ditto` so bundle metadata and executable
+  permissions survive archiving.
+
 ## [2.0.0] — 2026-10-26
 
 ### Added
@@ -43,5 +61,6 @@ All notable changes to Cerberus are documented here. Versions follow
   standalone builds, eight factory presets, constant-latency bypass, and
   Windows/Linux CI packages.
 
+[2.1.0]: https://github.com/briansilberbauer-gamatam/cerberus/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/briansilberbauer-gamatam/cerberus/compare/v1.0.0...v2.0.0
 [1.0.0]: https://github.com/briansilberbauer-gamatam/cerberus/releases/tag/v1.0.0
