@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(Cerberus VERSION 1.0.0 LANGUAGES C CXX)
+project(Cerberus VERSION 2.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -42,6 +42,7 @@ set(CERBERUS_SOURCES
     Source/PluginEditor.h
     Source/Parameters.h
     Source/Presets.h
+    Source/Version.h
     Source/dsp/AutoWah.h
     Source/dsp/Compressor.h
     Source/dsp/Distortion.h
@@ -57,6 +58,7 @@ set(CERBERUS_SOURCES
     Source/ui/WaveformDisplay.h)
 
 set(CERBERUS_DEFINITIONS
+    CERBERUS_VERSION="${PROJECT_VERSION}"
     JUCE_WEB_BROWSER=0
     JUCE_USE_CURL=0
     JUCE_VST3_CAN_REPLACE_VST2=0
@@ -93,6 +95,21 @@ target_link_libraries(Cerberus
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)
+
+# Replace JUCE's default standalone wrapper with a lightweight host that shows
+# the editor before touching the audio backend. This avoids an apparent
+# "does nothing" launch when a system audio driver stalls during startup.
+if(TARGET Cerberus_Standalone)
+    target_sources(Cerberus_Standalone PRIVATE Source/Standalone/CerberusStandaloneApp.cpp)
+    target_include_directories(Cerberus_Standalone PRIVATE Source)
+    target_compile_definitions(Cerberus_Standalone PRIVATE
+        JUCE_USE_CUSTOM_PLUGIN_STANDALONE_APP=1
+        CERBERUS_VERSION="${PROJECT_VERSION}")
+    target_link_libraries(Cerberus_Standalone
+        PRIVATE
+            juce::juce_audio_utils
+            juce::juce_gui_extra)
+endif()
 
 if(CERBERUS_BUILD_TESTS)
     enable_testing()

@@ -1,6 +1,7 @@
 #include "PluginEditor.h"
 
 #include "Parameters.h"
+#include "Version.h"
 #include "ui/Controls.h"
 #include "ui/EffectPanel.h"
 #include "ui/Theme.h"
@@ -226,8 +227,8 @@ private:
 
         g.setColour (textMuted);
         g.setFont (font (6.2f, FontWeight::semibold, 0.13f));
-        g.drawText ("64-BIT FLOAT  /  v1.0.0", 930, 625, 176, 9,
-                    juce::Justification::centredRight, false);
+        g.drawText ("64-BIT FLOAT  /  v" + juce::String (cerberus::version),
+                    930, 625, 176, 9, juce::Justification::centredRight, false);
         g.drawText ("Double-click a knob or slider to reset", 930, 650, 176, 9,
                     juce::Justification::centredRight, false);
         g.drawText ("BLS AUDIO  /  CERBERUS", 930, 663, 176, 9,

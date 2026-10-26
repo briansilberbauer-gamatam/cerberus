@@ -7,6 +7,24 @@ custom interface.
 
 ![Cerberus plugin interface](cerberus-ui.png)
 
+## What's new in 2.0
+
+Cerberus 2.0 is a major interface and standalone-host release:
+
+- **Redesigned studio-hardware interface** — brushed gunmetal chassis under a
+  flush glass panel, muted crimson LED edge-glow, low-profile knurled metal
+  knobs, ultra-thin glass sliders, and tactile module buttons.
+- **Live waveform visualizer** — the central obsidian screen draws the post-FX
+  output in real time from a lock-free audio-thread ring buffer.
+- **Reliable standalone app** — a lightweight custom host shows the editor
+  before opening an audio device, adds an **AUDIO** settings button, and skips
+  auto-open when ALSA has no hardware (`/dev/snd` missing), which avoids some
+  PipeWire startup stalls.
+- **Single-source versioning** — the editor, standalone app, and screenshot
+  tool read the release number from the CMake project version.
+
+See [CHANGELOG.md](CHANGELOG.md) for the full release history.
+
 ## Signal path
 
 | Stage | Processing |
@@ -95,6 +113,15 @@ Artifacts:
 - `build/Cerberus_artefacts/Release/VST3/Cerberus.vst3`
 - `build/Cerberus_artefacts/Release/Standalone/Cerberus`
 
+### Standalone app
+
+Run `./dist/Cerberus` (or the copied application on Windows/macOS). The editor
+opens immediately, before the audio backend is touched. On Linux the app prefers
+a direct ALSA hardware device and skips auto-opening if `/dev/snd` is missing,
+which avoids some PipeWire/driver combinations that can stall inside
+`snd_pcm_prepare()`. Use the **AUDIO** button in the window title bar to choose
+an input/output device, sample rate, and buffer size.
+
 ### Windows distribution
 
 A native MSVC build is recommended; cross-compiling JUCE VST3s from Linux is
@@ -109,7 +136,7 @@ The script builds x64 VST3 and standalone binaries, runs the DSP and VST3 host
 tests, and writes:
 
 ```text
-dist\Cerberus-Windows-x64-v1.0.0.zip
+dist\Cerberus-Windows-x64-v2.0.0.zip
 dist\SHA256SUMS-Windows.txt
 ```
 
@@ -128,17 +155,17 @@ A GitHub Actions workflow is included at
 from the Actions tab, then download the **Cerberus-Windows-x64** or
 **Cerberus-Linux-x64** artifact. The workflow builds Windows on `windows-2022`
 with the VS 2022 toolchain and Linux on `ubuntu-latest`; both jobs run the test
-suites and package the VST3, standalone, README, and font license.
+suites and package the VST3, standalone, README, changelog, and font license.
 
 To publish the package as a GitHub Release, push a version tag:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v2.0.0
+git push origin v2.0.0
 ```
 
 After both platform builds and their tests pass, the **Publish release** job
-creates or updates the `v1.0.0` release and attaches both platform zips and their
+creates or updates the `v2.0.0` release and attaches both platform zips and their
 SHA-256 checksums. You can also run **Build Plugins** manually and enter a
 release tag in the `release_tag` field; leave it empty to build without
 publishing a release.
@@ -150,15 +177,15 @@ development headers, configures with Ninja, runs the DSP and VST3 host tests,
 and uploads the **Cerberus-Linux-x64** artifact containing:
 
 ```text
-Cerberus-Linux-x64-v1.0.0.zip
-Cerberus-Linux-x64-v1.0.0.sha256
+Cerberus-Linux-x64-v2.0.0.zip
+Cerberus-Linux-x64-v2.0.0.sha256
 ```
 
-The zip contains the VST3 bundle, the standalone executable, README, and font
-license. Install it with:
+The zip contains the VST3 bundle, the standalone executable, README, changelog,
+and font license. Install it with:
 
 ```bash
-unzip Cerberus-Linux-x64-v1.0.0.zip -d /tmp/cerberus-linux
+unzip Cerberus-Linux-x64-v2.0.0.zip -d /tmp/cerberus-linux
 mkdir -p ~/.vst3
 cp -a /tmp/cerberus-linux/Cerberus.vst3 ~/.vst3/
 ```

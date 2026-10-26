@@ -72,7 +72,7 @@ try {
     New-Item -ItemType Directory -Force $packageDir | Out-Null
     Copy-Item -Recurse -Force $vst3 $packageDir
     Copy-Item -Force $standalone $packageDir
-    Copy-Item -Force "README.md", "Resources\Lato-OFL.txt" $packageDir
+    Copy-Item -Force "README.md", "CHANGELOG.md", "Resources\Lato-OFL.txt" $packageDir
 
     $zipName = "Cerberus-Windows-$Architecture-v$version.zip"
     $zipPath = Join-Path $distRoot $zipName

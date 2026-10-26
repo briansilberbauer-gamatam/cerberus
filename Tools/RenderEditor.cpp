@@ -1,5 +1,6 @@
 #include "PluginEditor.h"
 #include "PluginProcessor.h"
+#include "Version.h"
 
 #include <juce_gui_extra/juce_gui_extra.h>
 
@@ -12,7 +13,7 @@ class CerberusRenderApplication final : public juce::JUCEApplication,
 {
 public:
     const juce::String getApplicationName() override { return "Cerberus Screenshot"; }
-    const juce::String getApplicationVersion() override { return "1.0.0"; }
+    const juce::String getApplicationVersion() override { return cerberus::version; }
     bool moreThanOneInstanceAllowed() override { return true; }
     void anotherInstanceStarted (const juce::String&) override {}
     void systemRequestedQuit() override {}

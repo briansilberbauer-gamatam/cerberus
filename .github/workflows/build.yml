@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: "Optional release tag (e.g. v1.0.0). Leave empty to only upload the Actions artifact."
+        description: "Optional release tag (e.g. v2.0.0). Leave empty to only upload the Actions artifact."
         required: false
         type: string
   push:
@@ -71,7 +71,7 @@ jobs:
 
           Copy-Item -Recurse -Force "build-windows\Cerberus_artefacts\Release\VST3\Cerberus.vst3" $stage
           Copy-Item -Force "build-windows\Cerberus_artefacts\Release\Standalone\Cerberus.exe" $stage
-          Copy-Item -Force "README.md", "Resources\Lato-OFL.txt" $stage
+          Copy-Item -Force "README.md", "CHANGELOG.md", "Resources\Lato-OFL.txt" $stage
 
           $versionMatch = Select-String -Path "CMakeLists.txt" -Pattern 'project\(\s*Cerberus\s+VERSION\s+([0-9]+\.[0-9]+\.[0-9]+)'
           if (-not $versionMatch -or $versionMatch.Matches.Count -eq 0) { throw "Could not read the project version from CMakeLists.txt" }
@@ -161,7 +161,7 @@ jobs:
 
           cp -a build-linux/Cerberus_artefacts/Release/VST3/Cerberus.vst3 "$STAGE/"
           cp build-linux/Cerberus_artefacts/Release/Standalone/Cerberus "$STAGE/"
-          cp README.md Resources/Lato-OFL.txt "$STAGE/"
+          cp README.md CHANGELOG.md Resources/Lato-OFL.txt "$STAGE/"
 
           strip --strip-unneeded \
             "$STAGE/Cerberus.vst3/Contents/x86_64-linux/Cerberus.so" \
@@ -192,6 +192,27 @@ jobs:
       contents: write
 
     steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Build release notes from CHANGELOG
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.release_tag || github.ref_name }}"
+          VERSION="${TAG#v}"
+
+          awk -v version="$VERSION" '
+            index($0, "## [" version "]") == 1 { capture = 1; next }
+            capture && index($0, "## [") == 1 { exit }
+            capture { print }
+          ' CHANGELOG.md > release-notes.md
+
+          if [ ! -s release-notes.md ]; then
+            echo "Cerberus ${TAG}" > release-notes.md
+          fi
+
+          cat release-notes.md
+
       - name: Download release packages
         uses: actions/download-artifact@v4
         with:
@@ -205,6 +226,7 @@ jobs:
           tag_name: ${{ inputs.release_tag || github.ref_name }}
           target_commitish: ${{ github.sha }}
           name: Cerberus ${{ inputs.release_tag || github.ref_name }}
+          body_path: release-notes.md
           files: |
             release-assets/*.zip
             release-assets/*.sha256
