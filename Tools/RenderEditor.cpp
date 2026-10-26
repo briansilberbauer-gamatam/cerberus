@@ -53,6 +53,9 @@ public:
         editor->setVisible (true);
         editor->toFront (true);
 
+        // Park the cursor far away from the unit so no hover tooltip is captured.
+        juce::Desktop::getInstance().getMainMouseSource().setScreenPosition ({ 3000.0f, 3000.0f });
+
         processor->setPlayConfigDetails (2, 2, 48000.0, 1024);
         processor->prepareToPlay (48000.0, 1024);
         testBuffer.setSize (2, 1024);
@@ -61,7 +64,21 @@ public:
         juce::Timer::callAfterDelay (1500, [this]
         {
             stopTimer();
-            juce::Desktop::getInstance().getMainMouseSource().setScreenPosition ({ 1900.0f, 1040.0f });
+            juce::Desktop::getInstance().getMainMouseSource().setScreenPosition ({ 3000.0f, 3000.0f });
+
+            // A stale hover tooltip may still be visible from editor construction.
+            auto hideTooltips = [&] (auto&& self, juce::Component& component) -> void
+            {
+                for (auto* child : component.getChildren())
+                {
+                    if (dynamic_cast<juce::TooltipWindow*> (child) != nullptr)
+                        child->setVisible (false);
+                    else
+                        self (self, *child);
+                }
+            };
+            hideTooltips (hideTooltips, *editor);
+
             const auto image = editor->createComponentSnapshot (editor->getLocalBounds(), true, 2.0f);
 
             if (image.isValid())

@@ -47,12 +47,14 @@ set(CERBERUS_SOURCES
     Source/dsp/Distortion.h
     Source/ui/Theme.cpp
     Source/ui/Theme.h
-    Source/ui/CerberusLookAndFeel.cpp
-    Source/ui/CerberusLookAndFeel.h
+    Source/ui/StudioLookAndFeel.cpp
+    Source/ui/StudioLookAndFeel.h
     Source/ui/Controls.cpp
     Source/ui/Controls.h
     Source/ui/EffectPanel.cpp
-    Source/ui/EffectPanel.h)
+    Source/ui/EffectPanel.h
+    Source/ui/WaveformDisplay.cpp
+    Source/ui/WaveformDisplay.h)
 
 set(CERBERUS_DEFINITIONS
     JUCE_WEB_BROWSER=0

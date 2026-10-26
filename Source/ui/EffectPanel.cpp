@@ -12,15 +12,17 @@ EffectPanel::EffectPanel (juce::AudioProcessorValueTreeState& state,
                           juce::String subtitle,
                           juce::Colour accent,
                           const juce::String& powerParameterID,
-                          int knobColumns)
+                          int knobColumns,
+                          juce::String buttonLabel)
     : apvts (state),
       panelNumber (std::move (number)),
       panelTitle (std::move (title)),
       panelSubtitle (std::move (subtitle)),
+      powerLabel (std::move (buttonLabel)),
       accentColour (accent),
       columns (juce::jmax (1, knobColumns))
 {
-    powerSwitch = std::make_unique<PowerSwitch> (apvts, powerParameterID, accentColour,
+    powerSwitch = std::make_unique<PowerSwitch> (apvts, powerParameterID, powerLabel,
                                                   [this] (bool on) { setEffectEnabled (on); });
     addAndMakeVisible (*powerSwitch);
     setEffectEnabled (powerSwitch->isOn());
@@ -60,10 +62,10 @@ void EffectPanel::setBottomComponent (std::unique_ptr<juce::Component> component
 
 juce::Rectangle<int> EffectPanel::getKnobArea() const
 {
-    auto area = getLocalBounds().reduced (18, 0);
-    const int bottomTop = bottomComponent != nullptr ? getHeight() - 18 - bottomHeight : getHeight() - 16;
-    area.setTop (92);
-    area.setBottom (juce::jmax (100, bottomTop - 8));
+    auto area = getLocalBounds().reduced (12, 0);
+    const int bottomTop = bottomComponent != nullptr ? getHeight() - 14 - bottomHeight : getHeight() - 12;
+    area.setTop (84);
+    area.setBottom (juce::jmax (92, bottomTop - 8));
     return area;
 }
 
@@ -88,11 +90,11 @@ void EffectPanel::setEffectEnabled (bool shouldBeEnabled)
 void EffectPanel::resized()
 {
     if (powerSwitch != nullptr)
-        powerSwitch->setBounds (getWidth() - 82, 24, 60, 22);
+        powerSwitch->setBounds (getWidth() - 114, 18, 100, 28);
 
     if (bottomComponent != nullptr)
-        bottomComponent->setBounds (18, getHeight() - 18 - bottomHeight,
-                                    getWidth() - 36, bottomHeight);
+        bottomComponent->setBounds (14, getHeight() - 14 - bottomHeight,
+                                    getWidth() - 28, bottomHeight);
 
     if (knobs.isEmpty())
         return;
@@ -101,8 +103,8 @@ void EffectPanel::resized()
     const int rows = (knobs.size() + columns - 1) / columns;
     const float cellWidth = static_cast<float> (area.getWidth()) / static_cast<float> (columns);
     const float cellHeight = static_cast<float> (area.getHeight()) / static_cast<float> (juce::jmax (1, rows));
-    const int componentWidth = juce::roundToInt (juce::jmin (cellWidth - 8.0f, columns == 2 ? 138.0f : 108.0f));
-    const int componentHeight = juce::roundToInt (juce::jmin (cellHeight - 2.0f, 132.0f));
+    const int componentWidth = juce::roundToInt (juce::jmin (cellWidth - 8.0f, columns == 2 ? 150.0f : 104.0f));
+    const int componentHeight = juce::roundToInt (juce::jmin (cellHeight - 2.0f, 122.0f));
 
     for (int i = 0; i < knobs.size(); ++i)
     {
@@ -119,41 +121,71 @@ void EffectPanel::resized()
 
 void EffectPanel::paint (juce::Graphics& g)
 {
-    drawCardBackground (g, getLocalBounds().toFloat().reduced (0.5f), accentColour, effectEnabled);
+    const auto bounds = getLocalBounds().toFloat().reduced (1.0f);
+    constexpr float corner = 9.0f;
 
-    auto header = getLocalBounds().reduced (18, 0);
-    g.setFont (font (8.5f, FontWeight::semibold, 0.14f));
-    g.setColour (accentColour.withAlpha (effectEnabled ? 0.92f : 0.42f));
-    g.drawText (panelNumber, header.removeFromTop (26).withTrimmedTop (8),
+    // Recessed glass module seat.
+    g.setColour (obsidianWell.withAlpha (0.58f));
+    g.fillRoundedRectangle (bounds, corner);
+
+    juce::ColourGradient surface (gunmetalBase.withAlpha (0.18f), bounds.getTopLeft(),
+                                  juce::Colours::transparentBlack, bounds.getBottomLeft(), false);
+    g.setGradientFill (surface);
+    g.fillRoundedRectangle (bounds, corner);
+
+    g.setColour (juce::Colours::black.withAlpha (0.30f));
+    g.fillRoundedRectangle (bounds.withHeight (4.0f), corner);
+
+    g.setColour (glassRimHighlight.withAlpha (0.12f));
+    g.drawRoundedRectangle (bounds.reduced (0.5f), corner, 0.8f);
+
+    g.setColour (crimsonAccent.withAlpha (effectEnabled ? 0.18f : 0.07f));
+    g.drawRoundedRectangle (bounds.reduced (1.5f), corner - 0.8f, 0.7f);
+
+    // Calibration hairlines at the top corners.
+    g.setColour (crimsonAccent.withAlpha (effectEnabled ? 0.72f : 0.22f));
+    g.fillRect (bounds.getX() + 14.0f, bounds.getY() + 7.0f, 18.0f, 1.2f);
+    g.fillRect (bounds.getRight() - 32.0f, bounds.getY() + 7.0f, 18.0f, 1.2f);
+
+    // Engraved stage header.
+    g.setFont (font (7.4f, FontWeight::semibold, 0.20f));
+    g.setColour (accentColour.withAlpha (effectEnabled ? 0.95f : 0.42f));
+    g.drawText (panelNumber, 16, 14, 30, 11, juce::Justification::centredLeft, false);
+
+    g.setFont (font (16.5f, FontWeight::black, 0.015f));
+    g.setColour (textPrimary.withAlpha (effectEnabled ? 1.0f : 0.56f));
+    g.drawText (panelTitle, 16, 26, getWidth() - 140, 24,
                 juce::Justification::centredLeft, false);
 
-    if (! effectEnabled)
-    {
-        g.setFont (font (7.5f, FontWeight::semibold, 0.13f));
-        g.setColour (textDim);
-        g.drawText ("BYPASSED",
-                    juce::Rectangle<int> (getWidth() - 144, 12, 58, 12),
-                    juce::Justification::centredRight, false);
-    }
-
-    g.setFont (font (20.0f, FontWeight::black, 0.005f));
-    g.setColour (text.withAlpha (effectEnabled ? 1.0f : 0.7f));
-    g.drawText (panelTitle, header.removeFromTop (30).withTrimmedTop (8),
+    g.setFont (font (6.5f, FontWeight::semibold, 0.14f));
+    g.setColour (textMuted.withAlpha (effectEnabled ? 0.92f : 0.50f));
+    g.drawText (panelSubtitle, 16, 51, getWidth() - 130, 11,
                 juce::Justification::centredLeft, false);
 
-    g.setFont (font (8.0f, FontWeight::semibold, 0.115f));
-    g.setColour (textMuted.withAlpha (effectEnabled ? 0.9f : 0.5f));
-    g.drawText (panelSubtitle, header.removeFromTop (18),
-                juce::Justification::centredLeft, false);
-
-    g.setColour (border);
-    g.fillRect (juce::Rectangle<float> (18.0f, 84.0f, static_cast<float> (getWidth() - 36), 1.0f));
+    // Hairline separation below the header and above the meter row.
+    juce::ColourGradient headerLine (crimsonSubtle.withAlpha (effectEnabled ? 0.90f : 0.35f),
+                                     16.0f, 78.0f,
+                                     juce::Colours::transparentBlack, static_cast<float> (getWidth() - 16), 78.0f,
+                                     false);
+    g.setGradientFill (headerLine);
+    g.fillRect (juce::Rectangle<float> (16.0f, 78.0f, static_cast<float> (getWidth() - 32), 1.0f));
 
     if (bottomComponent != nullptr)
     {
-        const float lineY = static_cast<float> (getHeight() - 18 - bottomHeight - 10);
-        g.setColour (juce::Colours::white.withAlpha (0.045f));
-        g.fillRect (juce::Rectangle<float> (18.0f, lineY, static_cast<float> (getWidth() - 36), 1.0f));
+        const float lineY = static_cast<float> (getHeight() - 14 - bottomHeight - 8);
+        juce::ColourGradient footerLine (crimsonSubtle.withAlpha (effectEnabled ? 0.58f : 0.22f),
+                                         16.0f, lineY,
+                                         juce::Colours::transparentBlack, static_cast<float> (getWidth() - 16), lineY,
+                                         false);
+        g.setGradientFill (footerLine);
+        g.fillRect (juce::Rectangle<float> (16.0f, lineY, static_cast<float> (getWidth() - 32), 1.0f));
+    }
+
+    if (! effectEnabled)
+    {
+        g.setFont (font (6.2f, FontWeight::semibold, 0.16f));
+        g.setColour (textMuted);
+        g.drawText ("BYPASSED", 16, 65, 60, 9, juce::Justification::centredLeft, false);
     }
 }
 

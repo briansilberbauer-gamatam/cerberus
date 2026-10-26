@@ -4,50 +4,78 @@
 
 namespace cerberus::ui
 {
+    // --- Dark Studio Surface & Ambient Soft-Box Backdrop ---
+    inline const juce::Colour studioSurfaceLight { 0xff12151c };
+    inline const juce::Colour studioSurfaceDark  { 0xff07080b };
+    inline const juce::Colour dropShadowDeep     { 0xff020305 };
 
-inline const juce::Colour background { 0xff080a0d };
-inline const juce::Colour backgroundLift { 0xff10151b };
-inline const juce::Colour panel { 0xff14191f };
-inline const juce::Colour panelLift { 0xff1b222a };
-inline const juce::Colour panelDeep { 0xff0d1116 };
-inline const juce::Colour border { 0x1fffffff };
-inline const juce::Colour gridLine { 0x08ffffff };
-inline const juce::Colour text { 0xffeef2f4 };
-inline const juce::Colour textMuted { 0xff8b969f };
-inline const juce::Colour textDim { 0xff525d67 };
+    // --- Brushed Gunmetal Base Chassis & Chamfered Edges ---
+    inline const juce::Colour gunmetalLight      { 0xff2b3038 };
+    inline const juce::Colour gunmetalBase       { 0xff1d2026 };
+    inline const juce::Colour gunmetalDeep       { 0xff13151a };
+    inline const juce::Colour chamferLight       { 0xff343a44 };
+    inline const juce::Colour chamferDark        { 0xff0e1014 };
 
-inline const juce::Colour wah { 0xffffb65c };
-inline const juce::Colour compressor { 0xff55ddc8 };
-inline const juce::Colour distortion { 0xffff7166 };
-inline const juce::Colour amber { 0xffffc56e };
-inline const juce::Colour meterGreen { 0xff5de2b4 };
-inline const juce::Colour meterRed { 0xffff5f5f };
+    // --- Obsidian Black Screens & Recessed Cavities ---
+    inline const juce::Colour obsidianScreen     { 0xff090a0d };
+    inline const juce::Colour obsidianWell       { 0xff0d0f13 };
+    inline const juce::Colour obsidianGrid       { 0xff181b22 };
 
-enum class FontWeight
-{
-    regular,
-    semibold,
-    black
-};
+    // --- Transparent Glass Overlay & Soft-Box Reflections ---
+    inline const juce::Colour glassTintTop       { 0x1affffff };
+    inline const juce::Colour glassTintBottom    { 0x26050608 };
+    inline const juce::Colour glassSpecular      { 0x14ffffff };
+    inline const juce::Colour glassRimHighlight  { 0x33ffffff };
 
-juce::Font font (float height, FontWeight weight = FontWeight::regular, float tracking = 0.0f);
+    // --- Muted, Sophisticated Crimson Red Accents ---
+    inline const juce::Colour crimsonAccent      { 0xffc82230 };
+    inline const juce::Colour crimsonBright      { 0xffef3b49 };
+    inline const juce::Colour crimsonGlow        { 0xff8c141f };
+    inline const juce::Colour crimsonSubtle      { 0xff3d1218 };
 
-juce::String formatDb (float value);
-juce::String formatPercent (float value);
-juce::String formatTimeMs (float value);
-juce::String formatHz (float value);
-juce::String formatOctaves (float value);
-juce::String formatRatio (float value);
-juce::String formatTone (float value);
+    // --- Clean Minimalist Sans-Serif Typography ---
+    inline const juce::Colour textPrimary        { 0xffeceff4 };
+    inline const juce::Colour textSecondary      { 0xff929aa8 };
+    inline const juce::Colour textMuted          { 0xff545b68 };
 
-void drawCardBackground (juce::Graphics& g,
-                         juce::Rectangle<float> bounds,
-                         juce::Colour accent,
-                         bool enabled,
-                         float cornerSize = 14.0f);
+    // Aliases used by shared chrome code.
+    inline const juce::Colour background         { studioSurfaceDark };
+    inline const juce::Colour border             { glassRimHighlight };
+    inline const juce::Colour meterGreen         { crimsonAccent };
+    inline const juce::Colour meterRed           { crimsonBright };
 
-void drawAccentDivider (juce::Graphics& g,
-                        juce::Rectangle<float> bounds,
-                        juce::Colour accent);
+    enum class FontWeight
+    {
+        regular,
+        semibold,
+        black
+    };
+
+    juce::Font font (float height, FontWeight weight = FontWeight::regular, float tracking = 0.0f);
+
+    juce::String formatDb (float value);
+    juce::String formatPercent (float value);
+    juce::String formatTimeMs (float value);
+    juce::String formatHz (float value);
+    juce::String formatOctaves (float value);
+    juce::String formatRatio (float value);
+    juce::String formatTone (float value);
+
+    // Dark studio surface, dimensional chamfered gunmetal unit, brushed grain,
+    // flush screwless glass overlay and the crimson LED edge-glow.
+    void drawDesktopHardwareChassis (juce::Graphics&, juce::Rectangle<float> bounds);
+
+    // Engraved section label with a tiny crimson index tick and muted subtitle.
+    void drawEngravedLabel (juce::Graphics&, juce::Rectangle<float> bounds,
+                            const juce::String& title, const juce::String& subtitle);
+
+    // Recessed obsidian glass well used behind meters, screens and readouts.
+    void drawGlassWell (juce::Graphics&, juce::Rectangle<float> bounds, float corner);
+
+    // Small signal-path chip used in the footer.
+    void drawSignalChip (juce::Graphics&, juce::Rectangle<float> bounds, const juce::String& text);
+
+    // Soft crimson LED bead with a diffused halo.
+    void drawCrimsonDot (juce::Graphics&, juce::Point<float> centre, float radius);
 
 } // namespace cerberus::ui

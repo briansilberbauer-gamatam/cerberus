@@ -68,6 +68,9 @@ CerberusAudioProcessor::CerberusAudioProcessor()
     for (const auto* parameterID : cerberus::params::allParameterIDs)
         apvts.addParameterListener (parameterID, this);
 
+    for (auto& sample : waveformRing)
+        sample.store (0.0f, std::memory_order_relaxed);
+
     currentPreset.store (0, std::memory_order_relaxed);
     presetDirty.store (false, std::memory_order_relaxed);
 }
@@ -153,6 +156,11 @@ void CerberusAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
     outputLevel.store (0.0f, std::memory_order_relaxed);
     outputLevelLeft.store (0.0f, std::memory_order_relaxed);
     outputLevelRight.store (0.0f, std::memory_order_relaxed);
+
+    for (auto& sample : waveformRing)
+        sample.store (0.0f, std::memory_order_relaxed);
+
+    waveformWriteIndex.store (0, std::memory_order_relaxed);
 }
 
 void CerberusAudioProcessor::releaseResources()
@@ -224,6 +232,24 @@ void CerberusAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
 
     outputGainDsp.setGainLinear (juce::Decibels::decibelsToGain (outputGainParam->load()));
     outputGainDsp.process (context);
+
+    // Decimated post-FX mono waveform into the lock-free telemetry ring.
+    {
+        uint32_t writeIndex = waveformWriteIndex.load (std::memory_order_relaxed);
+
+        for (int i = 0; i < numSamples; i += waveformDecimation)
+        {
+            const float left  = active.getSample (0, i);
+            const float right = processChannels > 1 ? active.getSample (1, i) : left;
+            const float mono  = 0.5f * (left + right);
+
+            waveformRing[writeIndex].store (std::isfinite (mono) ? mono : 0.0f,
+                                            std::memory_order_relaxed);
+            writeIndex = (writeIndex + 1) & static_cast<uint32_t> (waveformSize - 1);
+        }
+
+        waveformWriteIndex.store (writeIndex, std::memory_order_relaxed);
+    }
 
     const float outputPeak = active.getMagnitude (0, numSamples);
     const float outputLeft = active.getMagnitude (0, 0, numSamples);

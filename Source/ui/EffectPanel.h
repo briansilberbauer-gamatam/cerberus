@@ -18,7 +18,8 @@ public:
                  juce::String subtitle,
                  juce::Colour accent,
                  const juce::String& powerParameterID,
-                 int knobColumns);
+                 int knobColumns,
+                 juce::String buttonLabel);
 
     ~EffectPanel() override;
 
@@ -40,6 +41,7 @@ private:
     juce::String panelNumber;
     juce::String panelTitle;
     juce::String panelSubtitle;
+    juce::String powerLabel;
     juce::Colour accentColour;
     int columns = 3;
     bool effectEnabled = true;

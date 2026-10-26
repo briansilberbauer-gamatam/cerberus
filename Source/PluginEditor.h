@@ -3,7 +3,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include "PluginProcessor.h"
-#include "ui/CerberusLookAndFeel.h"
+#include "ui/StudioLookAndFeel.h"
 
 #include <memory>
 
@@ -20,7 +20,7 @@ public:
 
 private:
     CerberusAudioProcessor& processor;
-    cerberus::ui::CerberusLookAndFeel lookAndFeel;
+    cerberus::ui::StudioLookAndFeel lookAndFeel;
     std::unique_ptr<CerberusEditorContent> content;
     juce::TooltipWindow tooltipWindow { this, 650 };
 

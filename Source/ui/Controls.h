@@ -9,6 +9,8 @@
 #include <memory>
 #include <vector>
 
+class CerberusAudioProcessor;
+
 namespace cerberus::ui
 {
 
@@ -40,12 +42,37 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParamKnob)
 };
 
+class ParamSlider final : public juce::Component
+{
+public:
+    using Formatter = std::function<juce::String (float)>;
+
+    ParamSlider (juce::AudioProcessorValueTreeState& state,
+                 const juce::String& parameterID,
+                 const juce::String& displayName,
+                 Formatter formatter);
+
+    void resized() override;
+
+private:
+    void updateValueLabel();
+
+    juce::Slider slider;
+    juce::Label nameLabel;
+    juce::Label valueLabel;
+    Formatter valueFormatter;
+    juce::RangedAudioParameter* parameter = nullptr;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> attachment;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ParamSlider)
+};
+
 class PowerSwitch final : public juce::Button
 {
 public:
     PowerSwitch (juce::AudioProcessorValueTreeState& state,
                  const juce::String& parameterID,
-                 juce::Colour accent,
+                 juce::String buttonLabel,
                  std::function<void (bool)> onChanged = {});
 
     using juce::Button::clicked;
@@ -60,7 +87,7 @@ private:
     juce::RangedAudioParameter* parameter = nullptr;
     std::unique_ptr<juce::ParameterAttachment> attachment;
     std::function<void (bool)> changeCallback;
-    juce::Colour accentColour;
+    juce::String label;
     bool on = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PowerSwitch)
@@ -70,8 +97,7 @@ class ModeBar final : public juce::Component
 {
 public:
     ModeBar (juce::AudioProcessorValueTreeState& state,
-             const juce::String& parameterID,
-             juce::Colour accent);
+             const juce::String& parameterID);
 
     void paint (juce::Graphics&) override;
     void mouseDown (const juce::MouseEvent&) override;
@@ -86,7 +112,6 @@ private:
     juce::RangedAudioParameter* parameter = nullptr;
     std::unique_ptr<juce::ParameterAttachment> attachment;
     juce::StringArray choices;
-    juce::Colour accentColour;
     int selected = 0;
     int hovered = -1;
 
@@ -96,13 +121,12 @@ private:
 class GainReductionMeter final : public juce::Component
 {
 public:
-    explicit GainReductionMeter (juce::Colour accent);
+    GainReductionMeter();
 
     void setReductionDb (float newReductionDb);
     void paint (juce::Graphics&) override;
 
 private:
-    juce::Colour accentColour;
     float displayedDb = 0.0f;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (GainReductionMeter)
@@ -111,20 +135,19 @@ private:
 class SweepMeter final : public juce::Component
 {
 public:
-    explicit SweepMeter (juce::Colour accent);
+    SweepMeter();
 
     void setCutoffHz (float newCutoffHz);
     void paint (juce::Graphics&) override;
 
 private:
-    juce::Colour accentColour;
     float displayedHz = 220.0f;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SweepMeter)
 };
 
 class StereoMeter final : public juce::Component,
-                           public juce::SettableTooltipClient
+                          public juce::SettableTooltipClient
 {
 public:
     StereoMeter();
@@ -145,6 +168,42 @@ private:
     int clipTicks = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StereoMeter)
+};
+
+class PillNavButton final : public juce::Button
+{
+public:
+    explicit PillNavButton (bool pointsLeft);
+
+    void paintButton (juce::Graphics&, bool isMouseOverButton, bool isButtonDown) override;
+
+private:
+    bool left;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PillNavButton)
+};
+
+class PresetPill final : public juce::Component
+{
+public:
+    explicit PresetPill (CerberusAudioProcessor&);
+
+    void refresh();
+    void paint (juce::Graphics&) override;
+    void resized() override;
+
+private:
+    void stepPreset (int direction);
+
+    CerberusAudioProcessor& processor;
+    PillNavButton prevButton { true };
+    PillNavButton nextButton { false };
+    juce::ComboBox presetBox;
+    int lastPreset = 0;
+    bool lastDirty = false;
+    bool syncing = false;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PresetPill)
 };
 
 } // namespace cerberus::ui

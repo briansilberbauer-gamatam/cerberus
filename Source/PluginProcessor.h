@@ -7,7 +7,9 @@
 #include "dsp/Compressor.h"
 #include "dsp/Distortion.h"
 
+#include <array>
 #include <atomic>
+#include <cstdint>
 #include <memory>
 
 class CerberusAudioProcessor final : public juce::AudioProcessor,
@@ -57,6 +59,20 @@ public:
     float getWahCutoffHz() const noexcept { return autoWah.getCurrentCutoffHz(); }
     int getDistortionLatencySamples() const noexcept { return distortion.getLatencySamples(); }
 
+    // Lock-free post-FX waveform telemetry for the editor visualizer.
+    static constexpr int waveformSize = 2048;
+    static constexpr int waveformDecimation = 8;
+
+    uint32_t getWaveformWriteIndex() const noexcept
+    {
+        return waveformWriteIndex.load (std::memory_order_relaxed);
+    }
+
+    float getWaveformSample (uint32_t index) const noexcept
+    {
+        return waveformRing[index & (waveformSize - 1)].load (std::memory_order_relaxed);
+    }
+
 private:
     void parameterChanged (const juce::String& parameterID, float newValue) override;
     void applyPreset (int index);
@@ -103,6 +119,9 @@ private:
     std::atomic<float> outputLevel { 0.0f };
     std::atomic<float> outputLevelLeft { 0.0f };
     std::atomic<float> outputLevelRight { 0.0f };
+
+    std::array<std::atomic<float>, waveformSize> waveformRing {};
+    std::atomic<uint32_t> waveformWriteIndex { 0 };
 
     double currentSampleRate = 48000.0;
     int preparedChannels = 2;
